@@ -742,23 +742,30 @@ export default function App() {
                   })}
                 </p>
 
-                {/* Current Weather Main */}
-                <div className="text-center mb-6">
+                {/* --- ИЗМЕНЕНИЕ 1: START --- */}
+                {/* Current Weather Main (Icon left, Text right) */}
+                <div className="flex items-center justify-between mb-6">
+                  {/* Left Side: Icon */}
                   <img
                     src={`https:${weatherData.current.condition.icon}`.replace('64x64', '128x128')}
                     alt={weatherData.current.condition.text}
-                    className="w-28 h-28 -my-4 mx-auto" // "A little smaller"
+                    className="w-28 h-28 -my-4" // Убран 'mx-auto'
                   />
-                  {/* "A little smaller" */}
-                  <span className="text-7xl font-light">
-                    {Math.round(weatherData.current.temp_c)}°
-                  </span>
-                  <span className="text-2xl align-top">C</span>
-                  <p className="text-lg font-medium">{weatherData.current.condition.text}</p>
-                  <p className="text-white/70 text-base">
-                    Feels like: {Math.round(weatherData.current.feelslike_c)}°C
-                  </p>
+
+                  {/* Right Side: Text Details */}
+                  <div className="text-right"> {/* Выравнивание текста по правому краю */}
+                    <span className="text-7xl font-light">
+                      {Math.round(weatherData.current.temp_c)}°
+                    </span>
+                    <span className="text-2xl align-top">C</span>
+                    <p className="text-lg font-medium">{weatherData.current.condition.text}</p>
+                    <p className="text-white/70 text-base">
+                      Feels like: {Math.round(weatherData.current.feelslike_c)}°C
+                    </p>
+                  </div>
                 </div>
+                {/* --- ИЗМЕНЕНИЕ 1: END --- */}
+
 
                 {/* Additional Details Grid */}
                 <div className="grid grid-cols-3 gap-4 text-center bg-white/10 dark:bg-black/10 p-3 rounded-lg mb-6">
@@ -776,32 +783,36 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* "Beautiful" 3-Day Forecast (Vertical List) */}
-                <h3 className="text-lg font-bold text-white/90 mb-3">3-Day Forecast</h3>
-                <div className="space-y-2">
-                  {weatherData.forecast.forecastday.slice(1, 4).map((day) => (
-                    <div
-                      key={day.date_epoch}
-                      className="flex items-center justify-between p-2 bg-white/10 dark:bg-black/10 rounded-lg"
-                    >
-                      <img
-                        src={`https:${day.day.condition.icon}`}
-                        alt={day.day.condition.text}
-                        className="w-8 h-8"
-                      />
-                      <p className="font-semibold text-white/80 w-14 text-sm">
-                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                      </p>
-                      <p className="text-xs text-white/70 flex-1 truncate px-2" title={day.day.condition.text}>
-                        {day.day.condition.text}
-                      </p>
-                      <p className="text-base font-medium">
-                        {Math.round(day.day.maxtemp_c)}°
-                        <span className="text-white/50">/{Math.round(day.day.mintemp_c)}°</span>
-                      </p>
-                    </div>
-                  ))}
+                {/* --- ИЗМЕНЕНИЕ 2: START --- */}
+                {/* "Beautiful" 3-Day Forecast (Vertical List as a Card) */}
+                <div className="bg-white/10 dark:bg-black/10 p-3 rounded-lg"> {/* <-- ВНЕШНЯЯ КАРТОЧКА */}
+                  <h3 className="text-lg font-bold text-white/90 mb-3">3-Day Forecast</h3>
+                  <div className="space-y-2">
+                    {weatherData.forecast.forecastday.slice(1, 4).map((day) => (
+                      <div
+                        key={day.date_epoch}
+                        className="flex items-center justify-between p-2 bg-white/10 dark:bg-black/10 rounded-lg" // Внутренние карточки
+                      >
+                        <img
+                          src={`https:${day.day.condition.icon}`}
+                          alt={day.day.condition.text}
+                          className="w-8 h-8"
+                        />
+                        <p className="font-semibold text-white/80 w-14 text-sm">
+                          {new Date(day.date).toLocaleString('en-US', { weekday: 'short' })}
+                        </p>
+                        <p className="text-xs text-white/70 flex-1 truncate px-2" title={day.day.condition.text}>
+                          {day.day.condition.text}
+                        </p>
+                        <p className="text-base font-medium">
+                          {Math.round(day.day.maxtemp_c)}°
+                          <span className="text-white/50">/{Math.round(day.day.mintemp_c)}°</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+                {/* --- ИЗМЕНЕНИЕ 2: END --- */}
 
               </div>
             )}
@@ -830,4 +841,3 @@ export default function App() {
     </div>
   );
 }
-
