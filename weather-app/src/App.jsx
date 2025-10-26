@@ -1,18 +1,22 @@
+// --- ИЗМЕНЕНИЕ: Импорт framer-motion ---
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- ICONS (Simple SVGs for a clean look) ---
 const SearchIcon = () => (
+  // ... (иконка без изменений)
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
   </svg>
 );
 const HeartIcon = ({ filled }) => (
+  // ... (иконка без изменений)
   <svg xmlns="http://www.w3.org/2000/svg" fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-6 h-6 ${filled ? 'text-red-500' : 'text-white'}`}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
   </svg>
 );
-// --- NEW ICON ---
 const LocationArrowIcon = () => (
+  // ... (иконка без изменений)
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 inline-block ml-1 text-blue-300">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
@@ -20,15 +24,15 @@ const LocationArrowIcon = () => (
 
 
 // --- API & Constants ---
+// ... (без изменений)
 const API_KEY = '8de658b93237433d93b114946252610'; // Your key
 const API_URL_BASE = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&days=5&aqi=no&alerts=no&lang=en`;
 const API_SEARCH_URL = `https://api.weatherapi.com/v1/search.json?key=${API_KEY}`;
 
 // --- Helper Functions ---
+// ... (без изменений)
 const getInitialFavorites = () => {
   const savedFavorites = localStorage.getItem('weatherAppFavorites');
-  // --- MODIFIED ---
-  // Start with an empty list. Geolocation will be added separately.
   return savedFavorites ? JSON.parse(savedFavorites) : [];
 };
 
@@ -80,91 +84,73 @@ const getWeatherVisuals = (conditionText = '', isDay = 1) => {
 // --- Main App Component ---
 export default function App() {
   // --- State ---
+  // ... (без изменений)
   const [favorites, setFavorites] = useState(getInitialFavorites);
-  const [activeIndex, setActiveIndex] = useState(0); // Index of the active favorite card
-
-  // --- NEW STATE ---
-  // This will hold { name: "Current Location", query: "lat,lon" }
+  const [activeIndex, setActiveIndex] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
-  const [locationError, setLocationError] = useState(false); // To track geolocation permission
-
-  // Combined list of all cards to show
+  const [locationError, setLocationError] = useState(false);
   const allCards = useMemo(() => {
     return userLocation ? [userLocation, ...favorites] : [...favorites];
   }, [userLocation, favorites]);
-
-  // City to search is now derived from `allCards`
   const [cityToSearch, setCityToSearch] = useState(null);
-
   const [cityInput, setCityInput] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // --- State for Swipe Gestures ---
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  const minSwipeDistance = 50; // Minimum distance for a swipe
+  const minSwipeDistance = 50;
 
   // --- Effects ---
-
-  // 1. --- NEW --- Request Geolocation on App Load
+  // ... (все Effects без изменений)
+  // 1. Request Geolocation on App Load
   useEffect(() => {
     requestLocation();
-  }, []); // Empty array means this runs only once on mount
+  }, []);
 
-  // 2. Fetch weather data when `cityToSearch` changes
+  // 2. Fetch weather data
   useEffect(() => {
     if (!cityToSearch) {
       setWeatherData(null);
       setLoading(false);
-      // Don't set an error if locationError is already true
       if (!locationError) {
         setError("No favorite cities. Add one by searching.");
       }
       return;
     }
-
     const fetchWeather = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const response = await fetch(`${API_URL_BASE}&q=${cityToSearch}`);
         const data = await response.json();
-
         if (!response.ok) {
-          // --- MODIFIED ---
-          // If the API fails for "Current Location", handle it gracefully
           if (cityToSearch === userLocation?.query) {
             setError("Could not fetch weather for your location.");
-            setUserLocation(null); // Clear broken location
+            setUserLocation(null);
           } else {
             throw new Error(data.error?.message || 'City not found.');
           }
         }
-
         setWeatherData(data);
       } catch (err) {
         setError(err.message);
-        setWeatherData(null); // Clear data on error
+        setWeatherData(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchWeather();
-  }, [cityToSearch]); // Re-runs when `cityToSearch` changes
+  }, [cityToSearch]);
 
-  // 3. Save favorites to localStorage
+  // 3. Save favorites
   useEffect(() => {
     localStorage.setItem('weatherAppFavorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // 4. Fetch search suggestions (debounced)
+  // 4. Fetch search suggestions
   useEffect(() => {
     if (cityInput.length < 3) {
       setSuggestions([]);
@@ -187,48 +173,42 @@ export default function App() {
     return () => clearTimeout(debounceTimer);
   }, [cityInput]);
 
-  // 5. --- MODIFIED --- Update cityToSearch when activeIndex or `allCards` list changes
+  // 5. Update cityToSearch
   useEffect(() => {
     if (allCards.length > 0 && activeIndex < allCards.length) {
-      // Get the query string (e.g., "lat,lon" or "London")
       setCityToSearch(allCards[activeIndex].query || allCards[activeIndex]);
     } else if (allCards.length === 0) {
-      setCityToSearch(null); // No favorites, nothing to search for
+      setCityToSearch(null);
       if (!locationError) {
         setError("No favorite cities. Add one by searching.");
       }
       setWeatherData(null);
     } else if (activeIndex >= allCards.length) {
-      // If activeIndex is out of bounds (e.g., after deleting), reset to 0
       setActiveIndex(0);
     }
-  }, [activeIndex, allCards, locationError]); // Add locationError dependency
+  }, [activeIndex, allCards, locationError]);
 
   // --- Event Handlers ---
-
-  // --- NEW Geolocation Handler ---
+  // ... (все Handlers без изменений)
+  // Geolocation
   const requestLocation = () => {
     setLoading(true);
     setError(null);
     setLocationError(false);
-
     navigator.geolocation.getCurrentPosition(
-      // Success
       (position) => {
         const { latitude, longitude } = position.coords;
         const locationQuery = `${latitude},${longitude}`;
         setUserLocation({ name: "Current Location", query: locationQuery });
-        setActiveIndex(0); // Set active card to the new location
-        setCityToSearch(locationQuery); // Trigger fetch
+        setActiveIndex(0);
+        setCityToSearch(locationQuery);
         setLocationError(false);
       },
-      // Error
       (err) => {
         console.error(err);
         setLocationError(true);
         setError("Please grant location access to see local weather.");
         setLoading(false);
-        // If there are no favorites, stay at index 0. `cityToSearch` will be set to null.
         if(favorites.length > 0) {
           setCityToSearch(favorites[0]);
         } else {
@@ -238,75 +218,56 @@ export default function App() {
     );
   };
 
-  // --- Swipe Handlers ---
+  // Swipe
   const handleNext = () => {
-    // --- MODIFIED ---
     if (allCards.length === 0) return;
     setActiveIndex((prev) => (prev + 1) % allCards.length);
   };
-
   const handlePrev = () => {
-    // --- MODIFIED ---
     if (allCards.length === 0) return;
     setActiveIndex((prev) => (prev - 1 + allCards.length) % allCards.length);
   };
-
   const handleTouchStart = (e) => {
-    setTouchEnd(null); // Reset touch end
+    setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
-
   const handleTouchMove = (e) => {
     setTouchEnd(e.targetTouches[0].clientX);
   };
-
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-
     if (isLeftSwipe) {
       handleNext();
     } else if (isRightSwipe) {
       handlePrev();
     }
-    // Reset
     setTouchStart(null);
     setTouchEnd(null);
   };
 
-  // --- Search and Favorites Handlers ---
+  // Search and Favorites
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (!cityInput.trim()) return;
-
     const newCity = cityInput.trim();
-    // Check if it's already a favorite
-    // --- MODIFIED --- (Check only favorites, not userLocation)
     const index = favorites.findIndex(fav => fav.toLowerCase() === newCity.toLowerCase());
-
     if (index > -1) {
-      // If it exists, just switch to it
-      // Add 1 to index if userLocation exists
       setActiveIndex(index + (userLocation ? 1 : 0));
     } else {
-      // If new, add it and switch to it
       const newFavorites = [newCity, ...favorites];
       setFavorites(newFavorites);
-      // Switch to the new card (index 0 if no location, index 1 if location exists)
       setActiveIndex(userLocation ? 1 : 0);
     }
-
     setCityInput('');
     setSuggestions([]);
     setIsSearchFocused(false);
   };
-
   const handleSuggestionClick = (suggestion) => {
     const newCity = suggestion.name;
     const index = favorites.findIndex(fav => fav.toLowerCase() === newCity.toLowerCase());
-
     if (index > -1) {
       setActiveIndex(index + (userLocation ? 1 : 0));
     } else {
@@ -314,60 +275,39 @@ export default function App() {
       setFavorites(newFavorites);
       setActiveIndex(userLocation ? 1 : 0);
     }
-
     setCityInput('');
     setSuggestions([]);
     setIsSearchFocused(false);
   };
-
-  // For mobile "Heart" button
   const handleToggleFavorite = () => {
     if (!weatherData) return;
-
-    // --- MODIFIED ---
-    // Do not allow toggling favorite for "Current Location"
     if (activeIndex === 0 && userLocation) {
       return;
     }
-
     const currentCity = weatherData.location.name;
     const index = favorites.indexOf(currentCity);
-
     if (index > -1) {
-      // Remove from favorites
       handleRemoveFavorite(currentCity);
     } else {
-      // Add to favorites
       const newFavorites = [currentCity, ...favorites];
       setFavorites(newFavorites);
-      // Switch to the new card (which will be at index 1)
       setActiveIndex(userLocation ? 1 : 0);
     }
   };
-
-  // For desktop "X" button
   const handleRemoveFavorite = (cityToRemove) => {
     const newFavorites = favorites.filter(fav => fav !== cityToRemove);
-    // Adjust activeIndex if we removed the active card
-    // --- MODIFIED ---
     const oldIndex = favorites.indexOf(cityToRemove) + (userLocation ? 1 : 0);
-
     if (activeIndex === oldIndex) {
-      // If we removed the active card, reset to index 0
       setActiveIndex(0);
     } else if (activeIndex > oldIndex) {
-      // If we removed a card before the active one, shift activeIndex left
       setActiveIndex(prev => prev - 1);
     }
-
     setFavorites(newFavorites);
   };
-
-  // --- MODIFIED ---
-  // Check if the *current weatherData city* is in favorites
   const isCityInFavorites = weatherData && favorites.some(fav => fav.toLowerCase() === weatherData.location.name.toLowerCase());
 
   // --- Memoized Visuals ---
+  // ... (без изменений)
   const visuals = useMemo(() => {
     if (!weatherData && !loading) return { theme: 'light', bgGif: 'url(https://i.gifer.com/60.gif)' }; // Error/no city
     if (!weatherData) return { theme: 'light', bgGif: 'url(https://i.gifer.com/60.gif)' }; // Loading
@@ -391,18 +331,15 @@ export default function App() {
       <div className="relative z-10 min-h-screen w-full flex items-center justify-center p-4 font-sans">
 
         {/* ================================================================== */}
-        {/* --- 3A. DESKTOP VIEW (Hidden on small, flex on medium+) --- */}
-        {/* `md:flex` - display: flex on medium screens and up */}
-        {/* `hidden` - display: none by default (on small screens) */}
+        {/* --- 3A. DESKTOP VIEW (Без изменений) --- */}
         {/* ================================================================== */}
         <div className="hidden md:flex w-full max-w-4xl bg-gray-900/70 dark:bg-black/70 backdrop-blur-lg rounded-2xl shadow-2xl text-white overflow-hidden" style={{minHeight: '600px'}}>
 
-          {/* --- LEFT PANEL (Favorites & Search) --- */}
+          {/* --- LEFT PANEL --- */}
           <div className="w-full md:w-1/3 p-6 flex flex-col justify-between border-r border-white/20">
             <div>
               <h2 className="font-bold text-2xl text-white/90 mb-4">Favorites</h2>
               <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {/* --- MODIFIED --- Render allCards */}
                 {allCards.map((city, index) => (
                   <div
                     key={typeof city === 'object' ? city.name : city}
@@ -411,14 +348,12 @@ export default function App() {
                   >
                     <span className="text-lg text-white/80">
                       {typeof city === 'object' ? city.name : city}
-                      {/* --- NEW --- Show location arrow */}
                       {index === 0 && userLocation && <LocationArrowIcon />}
                     </span>
-                    {/* --- MODIFIED --- Don't show 'x' for userLocation */}
                     {index !== 0 || !userLocation ? (
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); // Stop click from bubbling to the div
+                          e.stopPropagation();
                           handleRemoveFavorite(city);
                         }}
                         className="text-red-500 opacity-0 group-hover:opacity-100 transition"
@@ -427,11 +362,10 @@ export default function App() {
                         &times;
                       </button>
                     ) : (
-                      <div className="w-4 h-4"></div> // Placeholder for alignment
+                      <div className="w-4 h-4"></div>
                     )}
                   </div>
                 ))}
-                {/* --- MODIFIED --- Show location error or no-favorites message */}
                 {allCards.length === 0 && !loading && (
                    <div className="text-white/60 text-center py-10">
                     {locationError ? (
@@ -452,7 +386,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Desktop Search Bar (at the bottom of left panel) */}
+            {/* Desktop Search Bar */}
             <div className="border-t border-white/20 pt-4 mt-4">
               <form onSubmit={handleSearchSubmit} className="relative flex space-x-2">
                 <input
@@ -471,7 +405,6 @@ export default function App() {
                 >
                   <SearchIcon />
                 </button>
-                {/* Desktop Search Suggestions */}
                 {isSearchFocused && suggestions.length > 0 && (
                   <div className="absolute bottom-full left-0 right-0 mb-2 w-full max-h-60 overflow-y-auto bg-gray-800/90 backdrop-blur-md rounded-lg shadow-lg z-20">
                     {suggestions.map((city) => (
@@ -490,10 +423,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* --- RIGHT PANEL (Weather Details for activeIndex) --- */}
+          {/* --- RIGHT PANEL --- */}
           <div className="w-full md:w-2/3 p-6 bg-white/10 dark:bg-black/10">
 
-            {/* Conditional Rendering: Loader / Error / Content */}
             {loading && (
               <div className="text-center h-full flex flex-col justify-center items-center">
                 <div className="inline-block w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -503,7 +435,6 @@ export default function App() {
 
             {error && !loading && (
               <div className="text-center h-full flex flex-col justify-center items-center p-4">
-                {/* --- MODIFIED --- Show location error with button */}
                 {locationError ? (
                   <>
                     <strong className="text-red-200">Error: {error}</strong>
@@ -522,14 +453,11 @@ export default function App() {
 
             {weatherData && !loading && (
               <div className="animate-fade-in">
-
-                {/* --- FIX START --- */}
                 {/* City Name & Favorite Toggle */}
                 <div className="flex justify-between items-center mb-4">
-                  <div> {/* <-- This DIV was missing its closing tag */}
+                  <div>
                     <p className="text-3xl font-light">
                       {weatherData.location.name}
-                      {/* --- NEW --- Show location arrow */}
                       {activeIndex === 0 && userLocation && <LocationArrowIcon />}
                     </p>
                     <p className="text-lg text-white/70">{weatherData.location.country}</p>
@@ -541,9 +469,8 @@ export default function App() {
                         hour12: true
                       })}
                     </p>
-                  </div> {/* <-- This DIV was moved from the wrong spot */}
+                  </div>
 
-                  {/* --- MODIFIED --- Hide heart for userLocation */}
                   {!(activeIndex === 0 && userLocation) && (
                     <button
                       onClick={handleToggleFavorite}
@@ -554,7 +481,6 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                {/* --- FIX END --- */}
 
 
                 {/* Current Weather Main */}
@@ -594,7 +520,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 3-Day Forecast (Vertical List) */}
+                {/* 3-Day Forecast */}
                 <h3 className="text-xl font-bold text-white/90 mb-3">3-Day Forecast</h3>
                 <div className="space-y-2">
                   {weatherData.forecast.forecastday.slice(1, 4).map((day) => (
@@ -627,15 +553,12 @@ export default function App() {
         </div>
 
         {/* ================================================================== */}
-        {/* --- 3B. MOBILE VIEW (flex on small, hidden on medium+) --- */}
-        {/* `md:hidden` - display: none on medium screens and up */}
-        {/* `flex` - display: flex by default (on small screens) */}
+        {/* --- 3B. MOBILE VIEW (ЗДЕСЬ ИЗМЕНЕНИЯ) --- */}
         {/* ================================================================== */}
         <div className="w-full max-w-md bg-gray-900/70 dark:bg-black/70 backdrop-blur-lg rounded-2xl shadow-2xl text-white overflow-hidden flex flex-col md:hidden">
 
-          {/* --- Search Section --- */}
+          {/* --- Search Section (Без изменений) --- */}
           <div className="p-4 border-b border-white/20">
-             {/* Mobile Search Form */}
              <form onSubmit={handleSearchSubmit} className="relative flex space-x-2">
               <input
                 type="text"
@@ -654,7 +577,6 @@ export default function App() {
                 <SearchIcon />
               </button>
 
-              {/* Mobile Search Suggestions */}
               {isSearchFocused && suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-14 mt-2 w-auto max-h-60 overflow-y-auto bg-gray-800/90 backdrop-blur-md rounded-lg shadow-lg z-20">
                   {suggestions.map((city) => (
@@ -679,147 +601,163 @@ export default function App() {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Conditional Rendering: Loader / Error / Content */}
+            {/* --- ИЗМЕНЕНИЕ: Добавлен AnimatePresence --- */}
+            {/* Этот компонент будет отслеживать появление и исчезновение дочерних элементов */}
+            <AnimatePresence>
 
-            {loading && (
-              <div className="text-center py-20">
-                <div className="inline-block w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                <p className="mt-2 text-white/80">Loading...</p>
-              </div>
-            )}
+              {/* Conditional Rendering: Loader / Error / Content */}
+              {loading && (
+                // --- ИЗМЕНЕНИЕ: div заменен на motion.div + добавлены key и props ---
+                <motion.div
+                  key="loader"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-center py-20" // Переносим классы сюда
+                >
+                  <div className="inline-block w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <p className="mt-2 text-white/80">Loading...</p>
+                </motion.div>
+              )}
 
-            {error && !loading && (
-              <div className="text-center py-20 p-4">
-                {/* --- MODIFIED --- Show location error with button */}
-                {locationError ? (
-                  <>
-                    <strong className="text-red-200">Error: {error}</strong>
-                    <button
-                      onClick={requestLocation}
-                      className="mt-4 px-3 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition"
-                    >
-                      Grant Location Access
-                    </button>
-                  </>
-                ) : (
-                  <strong className="text-red-200">Error: {error}</strong>
-                )}
-              </div>
-            )}
-
-            {weatherData && !loading && (
-              <div className="animate-fade-in">
-
-                {/* City Name & Favorite Toggle */}
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    {/* "A little smaller" */}
-                    <p className="text-2xl font-light">
-                      {weatherData.location.name}
-                      {/* --- NEW --- Show location arrow */}
-                      {activeIndex === 0 && userLocation && <LocationArrowIcon />}
-                    </p>
-                    <p className="text-md text-white/70">{weatherData.location.country}</p>
-                  </div>
-                  {/* --- MODIFIED --- Hide heart for userLocation */}
-                  {!(activeIndex === 0 && userLocation) && (
-                    <button
-                      onClick={handleToggleFavorite}
-                      className="p-2"
-                      title={isCityInFavorites ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      <HeartIcon filled={isCityInFavorites} />
-                    </button>
-                  )}
-                </div>
-
-                <p className="text-sm text-white/60 mb-6">
-                  {new Date(weatherData.location.localtime).toLocaleString('en-US', {
-                    weekday: 'long',
-                    hour: 'numeric',
-                    minute: 'numeric',
-                    hour12: true
-                  })}
-                </p>
-
-                {/* --- ИЗМЕНЕНИЕ 1: START --- */}
-                {/* Current Weather Main (Icon left, Text right) */}
-                <div className="flex items-center justify-between mb-6">
-                  {/* Left Side: Icon */}
-                  <img
-                    src={`https:${weatherData.current.condition.icon}`.replace('64x64', '128x128')}
-                    alt={weatherData.current.condition.text}
-                    className="w-28 h-28 -my-4" // Убран 'mx-auto'
-                  />
-
-                  {/* Right Side: Text Details */}
-                  <div className="text-right"> {/* Выравнивание текста по правому краю */}
-                    <span className="text-7xl font-light">
-                      {Math.round(weatherData.current.temp_c)}°
-                    </span>
-                    <span className="text-2xl align-top">C</span>
-                    <p className="text-lg font-medium">{weatherData.current.condition.text}</p>
-                    <p className="text-white/70 text-base">
-                      Feels like: {Math.round(weatherData.current.feelslike_c)}°C
-                    </p>
-                  </div>
-                </div>
-                {/* --- ИЗМЕНЕНИЕ 1: END --- */}
-
-
-                {/* Additional Details Grid */}
-                <div className="grid grid-cols-3 gap-4 text-center bg-white/10 dark:bg-black/10 p-3 rounded-lg mb-6">
-                  <div>
-                    <p className="text-xs text-white/60">Humidity</p>
-                    <p className="text-base font-semibold">{weatherData.current.humidity}%</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Wind</p>
-                    <p className="text-base font-semibold">{weatherData.current.wind_kph} kph</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">UV Index</p>
-                    <p className="text-base font-semibold">{weatherData.current.uv}</p>
-                  </div>
-                </div>
-
-                {/* --- ИЗМЕНЕНИЕ 2: START --- */}
-                {/* "Beautiful" 3-Day Forecast (Vertical List as a Card) */}
-                <div className="bg-white/10 dark:bg-black/10 p-3 rounded-lg"> {/* <-- ВНЕШНЯЯ КАРТОЧКА */}
-                  <h3 className="text-lg font-bold text-white/90 mb-3">3-Day Forecast</h3>
-                  <div className="space-y-2">
-                    {weatherData.forecast.forecastday.slice(1, 4).map((day) => (
-                      <div
-                        key={day.date_epoch}
-                        className="flex items-center justify-between p-2 bg-white/10 dark:bg-black/10 rounded-lg" // Внутренние карточки
+              {error && !loading && (
+                // --- ИЗМЕНЕНИЕ: div заменен на motion.div + добавлены key и props ---
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-center py-20 p-4" // Переносим классы сюда
+                >
+                  {locationError ? (
+                    <>
+                      <strong className="text-red-200">Error: {error}</strong>
+                      <button
+                        onClick={requestLocation}
+                        className="mt-4 px-3 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition"
                       >
-                        <img
-                          src={`https:${day.day.condition.icon}`}
-                          alt={day.day.condition.text}
-                          className="w-8 h-8"
-                        />
-                        <p className="font-semibold text-white/80 w-14 text-sm">
-                          {new Date(day.date).toLocaleString('en-US', { weekday: 'short' })}
-                        </p>
-                        <p className="text-xs text-white/70 flex-1 truncate px-2" title={day.day.condition.text}>
-                          {day.day.condition.text}
-                        </p>
-                        <p className="text-base font-medium">
-                          {Math.round(day.day.maxtemp_c)}°
-                          <span className="text-white/50">/{Math.round(day.day.mintemp_c)}°</span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* --- ИЗМЕНЕНИЕ 2: END --- */}
+                        Grant Location Access
+                      </button>
+                    </>
+                  ) : (
+                    <strong className="text-red-200">Error: {error}</strong>
+                  )}
+                </motion.div>
+              )}
 
-              </div>
-            )}
+              {weatherData && !loading && (
+                // --- ИЗМЕНЕНИЕ: div заменен на motion.div + key = activeIndex ---
+                // activeIndex - это ключ! Когда он меняется, framer-motion запускает анимацию
+                <motion.div
+                  key={activeIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  // className="animate-fade-in" // <-- Этот класс больше не нужен!
+                >
+
+                  {/* City Name & Favorite Toggle */}
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <p className="text-2xl font-light">
+                        {weatherData.location.name}
+                        {activeIndex === 0 && userLocation && <LocationArrowIcon />}
+                      </p>
+                      <p className="text-md text-white/70">{weatherData.location.country}</p>
+                    </div>
+                    {!(activeIndex === 0 && userLocation) && (
+                      <button
+                        onClick={handleToggleFavorite}
+                        className="p-2"
+                        title={isCityInFavorites ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <HeartIcon filled={isCityInFavorites} />
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-white/60 mb-6">
+                    {new Date(weatherData.location.localtime).toLocaleString('en-US', {
+                      weekday: 'long',
+                      hour: 'numeric',
+                      minute: 'numeric',
+                      hour12: true
+                    })}
+                  </p>
+
+                  {/* Current Weather Main (Icon left, Text right) */}
+                  <div className="flex items-center justify-between mb-6">
+                    <img
+                      src={`https:${weatherData.current.condition.icon}`.replace('64x64', '128x128')}
+                      alt={weatherData.current.condition.text}
+                      className="w-28 h-28 -my-4"
+                    />
+                    <div className="text-right">
+                      <span className="text-7xl font-light">
+                        {Math.round(weatherData.current.temp_c)}°
+                      </span>
+                      <span className="text-2xl align-top">C</span>
+                      <p className="text-lg font-medium">{weatherData.current.condition.text}</p>
+                      <p className="text-white/70 text-base">
+                        Feels like: {Math.round(weatherData.current.feelslike_c)}°C
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Additional Details Grid */}
+                  <div className="grid grid-cols-3 gap-4 text-center bg-white/10 dark:bg-black/10 p-3 rounded-lg mb-6">
+                    <div>
+                      <p className="text-xs text-white/60">Humidity</p>
+                      <p className="text-base font-semibold">{weatherData.current.humidity}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/60">Wind</p>
+                      <p className="text-base font-semibold">{weatherData.current.wind_kph} kph</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/60">UV Index</p>
+                      <p className="text-base font-semibold">{weatherData.current.uv}</p>
+                    </div>
+                  </div>
+
+                  {/* 3-Day Forecast (Vertical List as a Card) */}
+                  <div className="bg-white/10 dark:bg-black/10 p-3 rounded-lg">
+                    <h3 className="text-lg font-bold text-white/90 mb-3">3-Day Forecast</h3>
+                    <div className="space-y-2">
+                      {weatherData.forecast.forecastday.slice(1, 4).map((day) => (
+                        <div
+                          key={day.date_epoch}
+                          className="flex items-center justify-between p-2 bg-white/10 dark:bg-black/10 rounded-lg"
+                        >
+                          <img
+                            src={`https:${day.day.condition.icon}`}
+                            alt={day.day.condition.text}
+                            className="w-8 h-8"
+                          />
+                          <p className="font-semibold text-white/80 w-14 text-sm">
+                            {new Date(day.date).toLocaleString('en-US', { weekday: 'short' })}
+                          </p>
+                          <p className="text-xs text-white/70 flex-1 truncate px-2" title={day.day.condition.text}>
+                            {day.day.condition.text}
+                          </p>
+                          <p className="text-base font-medium">
+                            {Math.round(day.day.maxtemp_c)}°
+                            <span className="text-white/50">/{Math.round(day.day.mintemp_c)}°</span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </motion.div>
+              )}
+            </AnimatePresence> {/* --- ИЗМЕНЕНИЕ: Конец AnimatePresence --- */}
           </div>
 
-          {/* --- Dots Navigation (Only on Mobile) --- */}
-          {/* --- MODIFIED --- Use allCards.length */}
+          {/* --- Dots Navigation (Без изменений) --- */}
           {allCards.length > 1 && (
             <div className="flex justify-center space-x-2 p-4 border-t border-white/20">
               {allCards.map((city, index) => (
